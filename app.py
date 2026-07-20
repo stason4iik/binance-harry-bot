@@ -1,5 +1,6 @@
 import asyncio
 import hashlib
+
 from monitor import get_latest_post
 from translator import translate_text
 from telegram_bot import send_message
@@ -14,60 +15,47 @@ async def main():
 
     await init_db()
 
-    print("🤖 Бот запущен")
+    print("Проверка новых постов...")
 
-    while True:
+    post_text = await get_latest_post()
 
-        try:
-
-            post_text = await get_latest_post()
-
-            if post_text:
-
-                post_id = hashlib.md5(
-                    post_text.encode()
-                ).hexdigest()
+    if not post_text:
+        print("Постов нет")
+        return
 
 
-                if await is_new_post(post_id):
-
-                    await save_post(post_id)
-
-                    print(
-                        "Новый пост найден"
-                    )
+    post_id = hashlib.md5(
+        post_text.encode()
+    ).hexdigest()
 
 
-                    translated = translate_text(
-                        post_text
-                    )
+    if await is_new_post(post_id):
+
+        await save_post(post_id)
+
+        print("Новый пост найден")
 
 
-                    message = (
-                        "🚨 <b>Harry Liu новый пост</b>\n\n"
-                        "🇷🇺 <b>Перевод:</b>\n\n"
-                        f"{translated}\n\n"
-                        "────────────\n"
-                        "Источник: Binance Square"
-                    )
+        translated = translate_text(
+            post_text
+        )
 
 
-                    await send_message(
-                        message
-                    )
+        message = (
+            "🚨 <b>Harry Liu новый пост</b>\n\n"
+            "🇷🇺 <b>Перевод:</b>\n\n"
+            f"{translated}\n\n"
+            "────────────\n"
+            "Источник: Binance Square"
+        )
 
 
-            await asyncio.sleep(30)
+        await send_message(
+            message
+        )
 
-
-        except Exception as e:
-
-            print(
-                "Ошибка:",
-                e
-            )
-
-            await asyncio.sleep(60)
+    else:
+        print("Новых постов нет")
 
 
 
